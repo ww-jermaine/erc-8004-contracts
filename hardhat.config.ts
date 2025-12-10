@@ -49,6 +49,14 @@ const config: HardhatUserConfig = {
       url: configVariable("SEPOLIA_RPC_URL"),
       accounts: [configVariable("SEPOLIA_PRIVATE_KEY")],
     },
+    anvil: {
+      type: "http",
+      chainType: "l1",
+      url: process.env.ANVIL_RPC_URL || "http://localhost:8545",
+      accounts: process.env.ANVIL_PRIVATE_KEY 
+        ? [process.env.ANVIL_PRIVATE_KEY]
+        : ["0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"], // Anvil default
+    },
   },
 };
 

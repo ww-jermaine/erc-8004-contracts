@@ -9,6 +9,7 @@
     "test:all": "hardhat test test/ERC8004.ts && hardhat test test/ERC8004Upgradeable.ts",
     "local": "npx hardhat node",
     "deploy": "npx hardhat ignition deploy ./ignition/modules/ERC8004.ts --network localhost",
+    "deploy:anvil": "npx hardhat run scripts/deploy-anvil.ts --network anvil",
     "deploy:upgradeable": "npx hardhat run scripts/deploy-upgradeable.ts --network localhost",
     "deploy:upgradeable:sepolia": "npx hardhat run scripts/deploy-upgradeable.ts --network sepolia",
     "upgrade": "npx hardhat run scripts/upgrade-contracts.ts --network localhost",
