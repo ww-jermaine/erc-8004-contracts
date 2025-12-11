@@ -1,5 +1,5 @@
 import hre from "hardhat";
-import { formatEther, toUtf8Bytes } from "viem";
+import { formatEther, toHex } from "viem";
 
 /**
  * Deploy IdentityRegistry to Anvil for local testing
@@ -26,33 +26,28 @@ async function main() {
 
   // Deploy IdentityRegistry
   console.log("\nDeploying IdentityRegistry...");
-  const identityRegistryAddress = await viem.deployContract("IdentityRegistry");
+  const identityRegistry = await viem.deployContract("IdentityRegistry");
+  const identityRegistryAddress = identityRegistry.address;
   console.log(`✅ IdentityRegistry deployed to: ${identityRegistryAddress}`);
 
   // Verify deployment
   const code = await publicClient.getBytecode({
-    address: identityRegistryAddress,
+    address: identityRegistryAddress as `0x${string}`,
   });
   if (!code || code === "0x") {
     throw new Error("Contract deployment failed - no code at address");
   }
   console.log(`✅ Contract code verified (${code.length / 2 - 1} bytes)`);
 
-  // Get contract instance
-  const identityRegistry = await viem.getContractAt(
-    "IdentityRegistry",
-    identityRegistryAddress
-  );
-
   // Test registration
   console.log("\nTesting registration...");
   const testTokenURI = "http://localhost:8000/.well-known/agent-card.json";
   
   // Note: Contract uses MetadataEntry[] with {string key, bytes value}
-  // Convert string values to bytes
+  // Convert string values to bytes using toHex (as done in tests)
   const testMetadata = [
-    { key: "category", value: toUtf8Bytes("compute") },
-    { key: "type", value: toUtf8Bytes("a2a-trader") },
+    { key: "category", value: toHex("compute") },
+    { key: "type", value: toHex("a2a-trader") },
   ];
 
   const txHash = await identityRegistry.write.register([
@@ -65,17 +60,19 @@ async function main() {
   console.log(`   Transaction: ${receipt.transactionHash}`);
   console.log(`   Block: ${receipt.blockNumber}`);
 
-  // Get agent ID (first agent is ID 0)
-  const agentId = await identityRegistry.read.totalSupply();
-  console.log(`   Agent ID: ${agentId}`);
-  
-  // Check event was emitted
+  // Extract agent ID from event logs
   const registeredLog = receipt.logs.find((log) => {
     // Event signature: Registered(uint256,string,address)
     return log.topics && log.topics.length > 0;
   });
-  if (registeredLog) {
+  
+  if (registeredLog && registeredLog.topics[1]) {
+    // Agent ID is in topics[1] (indexed uint256)
+    const agentId = BigInt(registeredLog.topics[1]);
+    console.log(`   Agent ID: ${agentId}`);
     console.log(`   ✅ Registered event emitted`);
+  } else {
+    console.log(`   ⚠️  Could not extract agent ID from event logs`);
   }
 
   console.log("\n📋 Summary:");
